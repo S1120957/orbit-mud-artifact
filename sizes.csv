@@ -1,0 +1,12 @@
+quantity,value_bytes
+orbit_discover_bytes,132
+orbit_offer_bytes,66
+orbit_request_bytes,84
+orbit_total_dhcp_bytes,282
+fidem_discover_bytes,85
+rfc8520_mudstring_bytes,47
+mud_url_len_bytes,42
+max_single_option_limit,255
+dhcp_min_message_capacity,576
+orbit_discover_fits_576,1
+orbit_request_fits_576,1

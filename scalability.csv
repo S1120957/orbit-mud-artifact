@@ -1,0 +1,5 @@
+population_N,membership_path_nodes,membership_bytes,inclusion_nodes,inclusion_bytes,consistency_nodes,consistency_bytes,membership_verify_ms
+100,7,224,0,0,0,0,0.006066
+1000,10,320,0,0,0,0,0.008795
+10000,14,448,0,0,0,0,0.010525
+100000,17,544,0,0,0,0,0.012847

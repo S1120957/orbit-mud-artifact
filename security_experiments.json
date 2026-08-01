@@ -1,0 +1,150 @@
+[
+  {
+    "id": "E1",
+    "name": "Replay old signed MUD file",
+    "expected": "rejected",
+    "actual": "rejected",
+    "passed": true,
+    "detail": "C8:profile-digest-mismatch",
+    "baseline_note": "B1/B2 accept: signature valid, no version check"
+  },
+  {
+    "id": "E2",
+    "name": "Profile rollback v+1->v (returning controller)",
+    "expected": "rejected",
+    "actual": "rejected",
+    "passed": true,
+    "detail": "C4:record-not-latest-in-checkpoint",
+    "baseline_note": "B3 also rejects via last_update cache; B1/B2 accept"
+  },
+  {
+    "id": "E3",
+    "name": "First-contact old-but-time-valid endorsed checkpoint",
+    "expected": "accepted",
+    "actual": "accepted",
+    "passed": true,
+    "detail": "accepted",
+    "baseline_note": "Honest result: witnesses bound freshness to the endorsed view, not global latestness. Freshness still bounded by valid_until/accept_window."
+  },
+  {
+    "id": "E3b",
+    "name": "First-contact checkpoint beyond freshness window",
+    "expected": "rejected",
+    "actual": "rejected",
+    "passed": true,
+    "detail": "C7:checkpoint-stale",
+    "baseline_note": "Bounded staleness enforces rejection past window"
+  },
+  {
+    "id": "E4",
+    "name": "Join with revoked device key",
+    "expected": "rejected",
+    "actual": "rejected",
+    "passed": true,
+    "detail": "C9:device-status:revoked",
+    "baseline_note": "B1/B2/B3 have no per-device status: accept"
+  },
+  {
+    "id": "E5",
+    "name": "Join with suspended device key",
+    "expected": "rejected",
+    "actual": "rejected",
+    "passed": true,
+    "detail": "C9:device-status:suspended",
+    "baseline_note": "No baseline models suspension"
+  },
+  {
+    "id": "E6",
+    "name": "Replay old onboarding transcript (reused R)",
+    "expected": "rejected",
+    "actual": "rejected",
+    "passed": true,
+    "detail": "C10:commitment-reuse",
+    "baseline_note": "Commitment-reuse tracking (as in FIDEM) rejects"
+  },
+  {
+    "id": "E7",
+    "name": "Replay transcript under a different checkpoint",
+    "expected": "rejected",
+    "actual": "rejected",
+    "passed": true,
+    "detail": "C10:schnorr-verify",
+    "baseline_note": "Checkpoint digest bound in transcript"
+  },
+  {
+    "id": "E8",
+    "name": "Leaked FIDEM class secret K_c",
+    "expected": "class-wide-impersonation",
+    "actual": "class-wide-impersonation",
+    "passed": true,
+    "detail": "B2 accepts any holder of K_c",
+    "baseline_note": "ORBIT-MUD has no class-wide shared secret"
+  },
+  {
+    "id": "E9",
+    "name": "Leaked ORBIT-MUD device key k_i",
+    "expected": "impersonates-self-until-revoked",
+    "actual": "impersonates-self-until-revoked",
+    "passed": true,
+    "detail": "before=accepted;after=C9:device-status:revoked",
+    "baseline_note": "Blast radius = one revocable identity, not class"
+  },
+  {
+    "id": "E10",
+    "name": "Impersonate another device after one k_i leak",
+    "expected": "rejected",
+    "actual": "rejected",
+    "passed": true,
+    "detail": "C10:schnorr-verify",
+    "baseline_note": "Per-device PoP: cannot sign for a key not held"
+  },
+  {
+    "id": "E11",
+    "name": "Inconsistent checkpoints to two controllers",
+    "expected": "detected",
+    "actual": "detected",
+    "passed": true,
+    "detail": "same size, different root at equal seq",
+    "baseline_note": "Detection via checkpoint comparison, not prevention"
+  },
+  {
+    "id": "E12",
+    "name": "Witnesses available in {0,1,2,3} (q=2 strong)",
+    "expected": "reject<2, accept>=2",
+    "actual": {
+      "0": "rejected:C3:witness-quorum:0<2",
+      "1": "rejected:C3:witness-quorum:1<2",
+      "2": "accepted",
+      "3": "accepted"
+    },
+    "passed": true,
+    "baseline_note": "2-of-3 quorum on first contact"
+  },
+  {
+    "id": "E13",
+    "name": "Stale cached checkpoint within grace, log down",
+    "expected": "accepted",
+    "actual": "accepted",
+    "passed": true,
+    "detail": "accepted",
+    "baseline_note": "Bounded-staleness grace for returning controller"
+  },
+  {
+    "id": "E14",
+    "name": "Stale checkpoint after grace interval",
+    "expected": "rejected",
+    "actual": "rejected",
+    "passed": true,
+    "detail": "C7:checkpoint-stale",
+    "baseline_note": "Past grace -> reject"
+  },
+  {
+    "id": "E15",
+    "name": "Emergency suspension of healthcare gateway",
+    "expected": "suspended",
+    "actual": "suspended",
+    "passed": true,
+    "detail": "withdrew=True;newjoin=C8:emergency-suspension",
+    "baseline_note": "Emergency flag in signed record; withdraw+deny"
+  }
+]

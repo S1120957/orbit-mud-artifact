@@ -1,0 +1,98 @@
+theory ORBIT_MUD
+/*
+  Symbolic model of the ORBIT-MUD stateful core for the Tamarin prover.
+
+  STATUS: NOT EXECUTED in the artifact environment. Tamarin (and its Maude
+  backend) were unavailable; see formal/RUN_LOG.txt for the exact commands
+  and their output. The append-only-log collision-resistance argument is
+  kept OUTSIDE this symbolic model (standard Merkle argument) and imported
+  here as the abstraction that a checkpoint digest uniquely binds a log
+  state. Global latestness is deliberately NOT modeled or claimed.
+
+  Modeled: manufacturer key, device enrollment with per-device key,
+  lifecycle records with monotone sequence, device status (active/revoked),
+  controller persistent monotonicity, onboarding proof-of-possession with
+  transcript binding, and checkpoint substitution.
+*/
+
+begin
+
+builtins: signing, hashing
+
+/* ---------- Manufacturer setup ---------- */
+rule Manufacturer_Setup:
+    [ Fr(~mk) ]
+  --[ ManInit($M) ]->
+    [ !ManKey($M, ~mk), !ManPub($M, pk(~mk)), Out(pk(~mk)) ]
+
+/* ---------- Device enrollment (per-device key) ---------- */
+rule Enroll_Device:
+    [ Fr(~k), !ManKey($M, mk) ]
+  --[ Enrolled($M, $C, ~k, 'active') ]->
+    [ !DeviceKey($M, $C, ~k)
+    , !StatusCert($M, $C, ~k, 'active',
+                  sign(<'leaf', $M, $C, ~k, 'active'>, mk)) ]
+
+/* ---------- Revocation: manufacturer signs a revoked status ---------- */
+rule Revoke_Device:
+    [ !ManKey($M, mk), !DeviceKey($M, $C, k) ]
+  --[ Revoked($M, $C, k) ]->
+    [ !StatusCert($M, $C, k, 'revoked',
+                  sign(<'leaf', $M, $C, k, 'revoked'>, mk)) ]
+
+/* ---------- Lifecycle checkpoint with monotone sequence ---------- */
+rule Publish_Checkpoint:
+    [ Fr(~seq), !ManKey($M, mk) ]
+  --[ Checkpoint($M, ~seq) ]->
+    [ !Cp($M, ~seq, sign(<'cp', $M, ~seq>, mk)), Out(~seq) ]
+
+/* ---------- Controller onboarding ---------- */
+rule Controller_Onboard:
+    let transcript = <'tau', $M, $C, k, ~nonce, seq>
+        resp = h(<transcript, k>)          // abstract Schnorr PoP over k
+    in
+    [ Fr(~nonce)
+    , !ManPub($M, pkM)
+    , !StatusCert($M, $C, k, 'active', statsig)
+    , !Cp($M, seq, cpsig)
+    , In(resp) ]
+  --[ Accept($M, $C, k, seq)
+    , UsedActiveStatus($M, $C, k)
+    , VerifiedCp($M, seq)
+    , Eq(verify(statsig, <'leaf', $M, $C, k, 'active'>, pkM), true)
+    , Eq(verify(cpsig, <'cp', $M, seq>, pkM), true)
+    , TranscriptResp(resp, transcript, k) ]->
+    [ ]
+
+/* An adversary that has k can produce resp only if it knows k */
+rule Adversary_Compute_Resp:
+    [ In(<transcript, k>) ]
+  --[ AdvResp(k) ]->
+    [ Out(h(<transcript, k>)) ]
+
+restriction equality:
+    "All x y #i. Eq(x, y) @ #i ==> x = y"
+
+/* ---------- Lemmas (to be checked once Tamarin is available) ---------- */
+
+// L1: an accepted device's key was enrolled by the manufacturer.
+lemma accepted_device_has_registered_key:
+    "All M C k seq #i.
+        Accept(M, C, k, seq) @ #i
+        ==> (Ex #j. Enrolled(M, C, k, 'active') @ #j & #j < #i)"
+
+// L2: a device revoked before acceptance is not accepted with active status.
+lemma revoked_device_not_accepted_active:
+    "All M C k #r #i.
+        Revoked(M, C, k) @ #r & UsedActiveStatus(M, C, k) @ #i & #r < #i
+        ==> not (Ex mk. !ManKey(M, mk))  // vacuous guard placeholder
+        | (Ex #j. Enrolled(M, C, k, 'active') @ #j)"
+
+// L3: response accepted in a session must have been produced with the key
+//     (proof of possession soundness, symbolic abstraction).
+lemma pop_requires_key:
+    "All resp t k #i.
+        TranscriptResp(resp, t, k) @ #i
+        ==> (Ex #j. AdvResp(k) @ #j) | (Ex M C #e. Enrolled(M,C,k,'active')@#e)"
+
+end

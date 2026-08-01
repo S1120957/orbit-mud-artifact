@@ -1,0 +1,28 @@
+== summary ==
+device_proof_gen_ms                median=0.6241ms CI95=[0.6268,0.6450]
+controller_schnorr_verify_ms       median=2.6522ms CI95=[2.6598,2.6984]
+membership_proof_gen_ms            median=0.8919ms CI95=[0.9004,0.9195]
+membership_proof_verify_ms         median=0.0074ms CI95=[0.0076,0.0085]
+full_onboarding_ms                 median=9.5181ms CI95=[9.9549,10.2823]
+first_contact_onboarding_ms        median=17.4540ms CI95=[17.5222,17.8059]
+returning_onboarding_ms            median=9.6615ms CI95=[9.7149,9.8707]
+
+== sizes (bytes) ==
+orbit_discover_bytes         132
+orbit_request_bytes          84
+orbit_total_dhcp_bytes       282
+fidem_discover_bytes         85
+rfc8520_mudstring_bytes      47
+
+== scalability (N, path_nodes, membership_bytes) ==
+N=    100  path=  7 nodes   224 B  verify=0.006066ms
+N=   1000  path= 10 nodes   320 B  verify=0.008795ms
+N=  10000  path= 14 nodes   448 B  verify=0.010525ms
+N= 100000  path= 17 nodes   544 B  verify=0.012847ms
+
+== throughput ==
+   1 joins  10.1442 ms  98.58 joins/s
+  10 joins  103.6749 ms  96.46 joins/s
+  50 joins  543.2601 ms  92.04 joins/s
+ 100 joins  1068.1504 ms  93.62 joins/s
+ 200 joins  2158.7878 ms  92.64 joins/s
