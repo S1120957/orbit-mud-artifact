@@ -1,0 +1,42 @@
+=== ORBIT-MUD formal analysis execution log ===
+Date: Sat Aug  1 15:55:28 UTC 2026
+Host: Linux vm 6.18.5 #1 SMP PREEMPT_DYNAMIC @0 x86_64 x86_64 x86_64 GNU/Linux
+
+# Attempt 1: locate tamarin-prover
+$ which tamarin-prover
+(not found)
+
+# Attempt 2: apt install
+$ apt-get install -y tamarin-prover
+E: Unable to locate package tamarin-prover
+
+# Attempt 3: Maude backend dependency
+$ which maude
+(not found)
+
+# Attempt 4: run the model
+$ tamarin-prover --prove formal/orbit_mud.spthy
+bash: tamarin-prover: command not found
+
+RESULT: Tamarin prover and its Maude backend are not available in this
+environment, and the package sources required to install the Haskell
+toolchain and Maude are outside the network allowlist. The symbolic model
+formal/orbit_mud.spthy is preserved but WAS NOT EXECUTED. Per the study's
+research-integrity rule, the manuscript makes NO claim of successful formal
+verification; security properties are supported by a manual argument and by
+the executable experiments in attacks/security_experiments.py (16/16
+matched expected outcomes).
+
+=== ProVerif attempt (23 August 2026) ===
+$ apt-cache policy proverif            -> not in the Ubuntu 24.04 archive
+$ curl -I https://proverif.inria.fr/proverif2.05.tar.gz
+    HTTP/2 403 ; x-deny-reason: host_not_allowed
+$ github search "proverif in:name"     -> no upstream source mirror on GitHub
+    (opam package proverif.2.05 fetches from proverif.inria.fr, blocked)
+
+RESULT: ProVerif could not be installed in this environment because its only
+distribution host is outside the network allowlist. The model
+formal/orbit_mud.pv is preserved and documented in formal/README_PROVERIF.md
+but WAS NOT EXECUTED. No machine-checked security claim is made anywhere in
+the manuscript. The Tamarin model formal/orbit_mud.spthy is likewise preserved
+and unexecuted.

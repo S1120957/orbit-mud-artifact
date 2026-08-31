@@ -378,6 +378,188 @@ def E15_emergency_suspension_healthcare():
                 baseline_note="Emergency flag in signed record; withdraw+deny")
 
 
+def E16_duplicate_witness_identity():
+    # One valid endorsement duplicated to length 2 must NOT satisfy q=2;
+    # two distinct configured witnesses must.
+    w = build_world(6, validity=100000)
+    m = w["m"]
+    for i, wit in enumerate(w["witnesses"]):
+        wit.available = (i == 0)
+    m.publish_record(CLASS, URL)
+    cp_dup = m.issue_checkpoint(witnesses=w["witnesses"])
+    assert len(cp_dup.endorsements) == 1
+    cp_dup.endorsements = list(cp_dup.endorsements) * 2   # same wid twice
+    ctrl = fresh_controller(w, policy=dict(first_contact="strong", q=2))
+    dec_dup = onboard(w, w["devices"][0], ctrl=ctrl, cp=cp_dup)
+    # positive control: two distinct witnesses
+    for i, wit in enumerate(w["witnesses"]):
+        wit.available = (i < 2)
+    m.publish_record(CLASS, URL)
+    cp_ok = m.issue_checkpoint(witnesses=w["witnesses"])
+    ctrl2 = fresh_controller(w, policy=dict(first_contact="strong", q=2))
+    dec_ok = onboard(w, w["devices"][1], ctrl=ctrl2, cp=cp_ok)
+    ok = (not dec_dup.accepted) and dec_ok.accepted
+    actual = ("dup-rejected,distinct-accepted" if ok else
+              f"dup={dec_dup.reason};distinct={dec_ok.reason}")
+    return dict(id="E16", name="Duplicate endorsements from one witness id",
+                expected="dup-rejected,distinct-accepted", actual=actual,
+                passed=ok,
+                detail=f"dup={dec_dup.reason};distinct={dec_ok.reason}",
+                baseline_note="Quorum counts distinct configured identities")
+
+
+
+
+# ---------------------------------------------------------------- ledger
+from src.ledger.anchor import (ConsortiumLedger, Organisation, verify_anchor)
+from src.lifecycle_log.log import Checkpoint as _CP
+
+
+def _ledger_world(n=8, q=2, n_orgs=3):
+    w = build_world(n, validity=100000)
+    orgs = [Organisation(f"ORG{i}") for i in range(n_orgs)]
+    led = ConsortiumLedger(orgs, q=q)
+    pubs = {o.oid: o.public_bytes for o in orgs}
+    return w, led, orgs, pubs
+
+
+def E17_unanchored_checkpoint_rejected():
+    """Ledger-strict policy: a checkpoint never committed on-chain is rejected."""
+    w, led, orgs, pubs = _ledger_world()
+    m = w["m"]
+    anchored = w["cp"]
+    led.submit(m.man_id, anchored); led.seal_block(timestamp=1)
+    # a later, validly signed checkpoint that was never submitted on-chain
+    m.publish_record(CLASS, URL)
+    unanchored = m.issue_checkpoint(witnesses=w["witnesses"])
+    ok_anchored = verify_anchor(pubs, 2, m.man_id, anchored,
+                                led.anchor_proof(m.man_id, anchored))
+    ok_unanchored = verify_anchor(pubs, 2, m.man_id, unanchored,
+                                  led.anchor_proof(m.man_id, unanchored))
+    good = ok_anchored and not ok_unanchored
+    return dict(id="E17", name="Unanchored checkpoint under ledger-strict policy",
+                expected="anchored-accepted,unanchored-rejected",
+                actual=("anchored-accepted,unanchored-rejected" if good
+                        else f"anchored={ok_anchored};unanchored={ok_unanchored}"),
+                passed=good,
+                detail=f"anchored={ok_anchored};unanchored={ok_unanchored}",
+                baseline_note="On-chain commitment required for admission")
+
+
+def E18_ledger_prevents_equivocation():
+    """Total order on-chain: a fork at the same log size cannot be anchored."""
+    w, led, orgs, pubs = _ledger_world()
+    m = w["m"]
+    honest = w["cp"]
+    led.submit(m.man_id, honest); led.seal_block(timestamp=1)
+    fork = _CP(log_root=os.urandom(32), log_size=honest.log_size,
+               latest_record_digest=honest.latest_record_digest,
+               issued_at=honest.issued_at, manufacturer_id=m.man_id)
+    fork.signature = m.signer.sign(fork.signed_body())   # validly SIGNED fork
+    submitted = led.submit(m.man_id, fork)               # ledger must refuse
+    accepted = verify_anchor(pubs, 2, m.man_id, fork,
+                             led.anchor_proof(m.man_id, fork))
+    good = (not submitted) and (not accepted)
+    return dict(id="E18",
+                name="Signed forked checkpoint refused by ordered ledger",
+                expected="fork-refused", 
+                actual="fork-refused" if good else f"sub={submitted};acc={accepted}",
+                passed=good,
+                detail=f"submitted={submitted};verified={accepted};"
+                       f"refusals={led.refused}",
+                baseline_note=("Ledger total order upgrades equivocation from "
+                               "detectable to rejected at admission"))
+
+
+def E19_duplicate_org_endorsement():
+    """q-of-n on-chain must count DISTINCT organisation identities."""
+    w, led, orgs, pubs = _ledger_world(q=2)
+    m = w["m"]
+    for i, o in enumerate(orgs):
+        o.available = (i == 0)                 # only ORG0 endorses
+    led.submit(m.man_id, w["cp"])
+    blk = led.seal_block(timestamp=1)
+    below_threshold = (blk is None)            # 1 distinct org < q=2
+    # now duplicate ORG0's endorsement and check the verifier still refuses
+    w2, led2, orgs2, pubs2 = _ledger_world(q=2)
+    m2 = w2["m"]
+    led2.q = 1
+    led2.submit(m2.man_id, w2["cp"]); blk2 = led2.seal_block(timestamp=1)
+    blk2.endorsements = [blk2.endorsements[0]] * 2      # same oid twice
+    dup_rejected = not verify_anchor(pubs2, 2, m2.man_id, w2["cp"],
+                                     led2.anchor_proof(m2.man_id, w2["cp"]))
+    good = below_threshold and dup_rejected
+    return dict(id="E19", name="Duplicated organisation endorsement on-chain",
+                expected="dup-rejected", 
+                actual="dup-rejected" if good else f"seal={below_threshold};dup={dup_rejected}",
+                passed=good,
+                detail=f"under_threshold_block_refused={below_threshold};"
+                       f"duplicate_endorsement_rejected={dup_rejected}",
+                baseline_note="Distinct-identity counting on the ledger path")
+
+
+def E20_tampered_anchor_payload():
+    """Altering the anchored commitment breaks the inclusion proof."""
+    w, led, orgs, pubs = _ledger_world()
+    m = w["m"]
+    cp = w["cp"]
+    led.submit(m.man_id, cp); led.seal_block(timestamp=1)
+    proof = led.anchor_proof(m.man_id, cp)
+    tampered = dict(proof); tampered["payload"] = proof["payload"] + b"x"
+    r1 = verify_anchor(pubs, 2, m.man_id, cp, tampered)
+    tampered2 = dict(proof)
+    import copy as _copy
+    hdr = _copy.deepcopy(proof["header"]); hdr.tx_root = os.urandom(32)
+    tampered2["header"] = hdr
+    r2 = verify_anchor(pubs, 2, m.man_id, cp, tampered2)
+    good = (not r1) and (not r2)
+    return dict(id="E20", name="Tampered anchor payload or block header",
+                expected="rejected", actual="rejected" if good else f"{r1},{r2}",
+                passed=good, detail=f"payload_tamper={r1};header_tamper={r2}",
+                baseline_note="Merkle inclusion + endorsed header binding")
+
+
+
+
+def E21_fidem_device_id_binding_insufficient():
+    """FIDEM Fig.3 hashes h=[R||Xc||C||URL].  The released implementation also
+    binds a device identifier.  Test whether that confers per-device
+    entitlement: an attacker holding only the class secret Kc claims a victim's
+    identifier and must still be accepted, because Kc is class-wide."""
+    from src.baselines.baselines import (FidemClass, FidemDeviceRel,
+                                         b2rel_verify, b2_verify)
+    w = build_world(10)
+    m = w["m"]
+    trust = {m.man_id: m.signer.public_bytes}
+    cls = FidemClass()
+    victim_id = b"device-VICTIM-0001"
+    attacker_id = b"device-ATTACKER-9999"
+    # attacker knows only the class secret, no victim key exists at all
+    attacker = FidemDeviceRel(cls, URL)
+    R = attacker.commit()
+    spoofed_victim = b2rel_verify(trust, m.mud_files[URL], URL, cls.Xc, R,
+                                  victim_id, attacker.respond_rel)
+    R2 = attacker.commit()
+    own_id = b2rel_verify(trust, m.mud_files[URL], URL, cls.Xc, R2,
+                          attacker_id, attacker.respond_rel)
+    # and the Fig.3 variant, for reference
+    R3 = attacker.commit()
+    fig3 = b2_verify(trust, m.mud_files[URL], URL, cls.Xc, R3,
+                     attacker.respond)
+    good = spoofed_victim and own_id and fig3
+    return dict(id="E21",
+                name="FIDEM device-id binding does not give per-device entitlement",
+                expected="class-wide-impersonation-persists",
+                actual=("class-wide-impersonation-persists" if good
+                        else f"victim={spoofed_victim};own={own_id};fig3={fig3}"),
+                passed=good,
+                detail=(f"spoofed_victim_id_accepted={spoofed_victim}; "
+                        f"own_id_accepted={own_id}; fig3_variant_accepted={fig3}"),
+                baseline_note=("Holder of class secret Kc answers for ANY claimed "
+                               "device identifier; identifier binding is not "
+                               "authenticated by a per-device key"))
+
+
 EXPERIMENTS = [E1_replay_old_signed_file, E2_rollback_returning_controller,
                E3_first_contact_old_but_valid_checkpoint,
                E3b_first_contact_expired_checkpoint, E4_revoked_device,
@@ -386,7 +568,13 @@ EXPERIMENTS = [E1_replay_old_signed_file, E2_rollback_returning_controller,
                E8_leaked_fidem_class_secret, E9_leaked_orbit_device_key,
                E10_impersonate_other_after_one_leak, E11_split_view_detected,
                E12_witness_availability, E13_stale_within_grace,
-               E14_stale_after_grace, E15_emergency_suspension_healthcare]
+               E14_stale_after_grace, E15_emergency_suspension_healthcare,
+               E16_duplicate_witness_identity,
+               E17_unanchored_checkpoint_rejected,
+               E18_ledger_prevents_equivocation,
+               E19_duplicate_org_endorsement,
+               E20_tampered_anchor_payload,
+               E21_fidem_device_id_binding_insufficient]
 
 
 def run_all():

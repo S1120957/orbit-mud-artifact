@@ -1,0 +1,6 @@
+checkpoints_total,anchored,blocks,on_chain_bytes,bytes_per_checkpoint
+10,10,1,348,34.8
+50,50,5,1736,34.72
+100,100,10,3474,34.74
+500,500,50,17404,34.81
+1000,1000,100,34786,34.79

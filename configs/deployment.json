@@ -1,0 +1,16 @@
+{
+  "curve": "secp256r1",
+  "hash": "SHA-256",
+  "policy": {
+    "first_contact": "strong",
+    "q": 2,
+    "n_witnesses": 3,
+    "accept_window_seconds": 3600,
+    "grace_seconds": 600,
+    "fail_closed_classes": ["patient-monitoring-gateway"]
+  },
+  "manufacturer": "ACME-MED-0042",
+  "class": "patient-monitoring-gateway",
+  "mud_url": "https://mfr.example/mud/gw-monitor-v1.json",
+  "notes": "fail_closed_classes lists classes for which the Controller refuses onboarding when the lifecycle log is unreachable, instead of applying the grace interval. Set per deployment risk tolerance."
+}

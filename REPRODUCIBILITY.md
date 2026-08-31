@@ -1,34 +1,34 @@
 # Reproducing the ORBIT-MUD results
 
-Everything in the paper is produced by the scripts in this repository. There
-are no hand-entered measurements.
+Every number in the manuscript is produced by the scripts in this repository.
+There are no hand-entered measurements.
 
 ## 1. Environment used for the reported numbers
 
 ```
-OS              Ubuntu 24.04.4 LTS (Linux 6.18.5, x86_64)
-Python          3.12.3
-CPU             1 vCPU, Intel Xeon @ 2.10 GHz   <-- single core: throughput is serial
-Crypto          ecdsa 0.19.2, curve secp256r1, SHA-256
-Process model   single process, single thread, in-memory state
-LaTeX           TeX Live (pdflatex + bibtex), IEEEtran.cls 1.8b, IEEEtran.bst 1.14
+OS        Ubuntu 24.04 LTS (x86-64)
+Python    3.12.3
+CPU       1 vCPU, Intel Xeon @ 2.10 GHz   <-- single core: throughput is serial
+Crypto    ecdsa 0.19.2, curve secp256r1, SHA-256
+Model     single process, single thread, in-memory state
+LaTeX     pdflatex + bibtex, Springer llncs.cls, splncs04.bst
 ```
 
-The machine-readable copy of this block is written by the benchmark run to
-`results/environment.txt`.
+A machine-readable copy is written to `results/environment.txt` by the
+benchmark run.
 
-Timing numbers are hardware-dependent and will differ on other machines. The
-*security* experiment outcomes (16/16) and all *byte sizes* and *proof node
-counts* are deterministic and should reproduce exactly anywhere.
+Timing numbers are hardware-dependent. The **security-scenario outcomes
+(22/22)**, all **byte sizes**, and all **proof node counts** are deterministic
+and reproduce exactly anywhere.
 
 ## 2. Install
 
 ```bash
-pip install -r requirements.txt          # ecdsa, matplotlib, numpy, pytest, scapy
+pip install -r requirements.txt      # ecdsa, matplotlib, numpy, pytest, scapy
 ```
 
-For the manuscript you additionally need `pdflatex`, `bibtex`, and the
-`IEEEtran`, `booktabs`, `algorithm`, and `algorithmic` LaTeX packages.
+The manuscript additionally needs `pdflatex`, `bibtex`, and the `llncs`,
+`booktabs`, `algorithm`, `algorithmic`, and `tikz` LaTeX packages.
 
 ## 3. Run everything
 
@@ -36,77 +36,72 @@ For the manuscript you additionally need `pdflatex`, `bibtex`, and the
 make all
 ```
 
-which is equivalent to:
+equivalently:
 
 ```bash
-python3 -m pytest tests/ -q                  # 1. unit tests
-python3 attacks/security_experiments.py      # 2. security experiments E1-E15 + E3b
-python3 experiments/benchmark.py             # 3. latency, sizes, scalability, throughput
-python3 experiments/make_figures.py          # 4. figures
-cd paper && pdflatex main && bibtex main && pdflatex main && pdflatex main
+python3 -m pytest tests/ -q                  # 1. unit tests           -> 11 passed
+python3 attacks/security_experiments.py      # 2. scenarios E1-E21     -> 22/22
+python3 experiments/benchmark.py             # 3. latency, sizes, scalability
+python3 experiments/benchmark_ledger.py      # 4. ledger anchoring cost
+python3 experiments/make_figures_lncs.py     # 5. Figs. 5, 7, 9
+python3 experiments/make_figures_ledger.py   # 6. Fig. 8
+cd paper-lncs && pdflatex main && bibtex main && pdflatex main && pdflatex main
 ```
 
-## 4. Regenerating the LaTeX result macros and the security table
+## 4. Expected output
 
-The paper never contains a typed-in measurement. Both generated LaTeX
-fragments are rebuilt from the result files:
-
-- `paper/results_macros.tex` — one `\newcommand` per reported metric, built
-  from `results/summary_results.csv`, `results/sizes.csv`,
-  `results/scalability.csv`, `results/throughput.csv`, and
-  `results/security_experiments.json`.
-- `paper/_sec_rows.tex` — the rows of Table II, built from
-  `results/security_experiments.json`.
-
-The generator snippets are recorded in the session and reproduce these two
-files deterministically from the result files. Note that the rows of Table II
-are **embedded directly** into `main.tex` rather than `\input`, because
-`\input`-ing a file whose final token is `\\` inside a `tabular` triggers a
-`Misplaced \noalign` error under this TeX Live build; `_sec_rows.tex` is
-retained as the generated source of truth for those rows.
-
-## 5. Expected output
-
-| Step | Expected result |
+| Step | Expected |
 |---|---|
 | `pytest tests/` | `11 passed` |
-| `attacks/security_experiments.py` | `16/16 experiments matched expected outcome` |
-| `experiments/benchmark.py` | writes 6 files into `results/`; medians close to Table III on comparable hardware |
-| `experiments/make_figures.py` | writes `paper/fig_latency.pdf`, `paper/fig_scalability.pdf` |
-| LaTeX build | 7-page `paper/main.pdf`, 0 undefined references, 0 undefined citations, 0 overfull boxes |
+| `attacks/security_experiments.py` | `22/22 experiments matched expected outcome` |
+| `experiments/benchmark.py` | writes 6 files to `results/` |
+| `experiments/benchmark_ledger.py` | writes `ledger_{aggregation,verify,storage,onboarding}.csv` |
+| figure scripts | write `paper-lncs/fig_{scenarios,latency,scale,ledger}.pdf` |
+| LaTeX build | 0 undefined references, 0 undefined citations, 0 overfull boxes |
 
-Reference logs from the reported run are in `logs/`:
-`test_run2.log`, `security_run3.log`, `benchmark_run1.log`.
+Reference logs from the reported run are under `logs/`.
+
+## 5. Where each manuscript number comes from
+
+| Manuscript item | Source file |
+|---|---|
+| Scenario outcomes, Table 3, Fig. 5 | `results/security_experiments.json` |
+| Latency, Table 4, Fig. 7 | `results/summary_results.csv`, `raw_results.csv` |
+| DHCP encoding sizes | `results/sizes.csv` |
+| Status-tree scaling, Table 5, Fig. 9 | `results/scalability.csv` |
+| Ledger anchoring, Table 6, Fig. 8 | `results/ledger_*.csv` |
+| Throughput range | `results/throughput.csv` |
+
+`CLAIMS_EVIDENCE_MATRIX.md` maps individual claims to evidence and status.
 
 ## 6. Determinism and seeds
 
-`experiments/world.py` builds device populations from an explicit seed
-(default `seed=7` for the scalability sweep). Key generation uses fresh
-randomness per run, so individual timing samples vary; medians and CIs are
-stable across runs. Byte sizes, Merkle path lengths, and every security-
-experiment outcome are independent of randomness.
+`experiments/world.py` builds populations from an explicit seed (`seed=7` for
+the scalability sweep). Key generation uses fresh randomness per run, so
+individual timing samples vary while medians and confidence intervals are
+stable. Byte sizes, Merkle path lengths, and every scenario outcome are
+independent of randomness.
 
 ## 7. Formal analysis
 
-`formal/orbit_mud.spthy` is a Tamarin model of the stateful core. It was
-**not executed**: Tamarin and its Maude backend are unavailable in the
-evaluation environment and could not be installed under the network policy.
-The exact commands attempted and their output are in `formal/RUN_LOG.txt`.
-The paper therefore makes no formal-verification claim. To run the model
-yourself:
-
-```bash
-tamarin-prover --prove formal/orbit_mud.spthy
-```
+`formal/orbit_mud.pv` (ProVerif) and `formal/orbit_mud.spthy` (Tamarin) are
+preserved but **were not executed**; neither prover could be installed in the
+evaluation environment (`formal/RUN_LOG.txt` records the attempts). The
+manuscript makes **no** machine-checked security claim and treats symbolic
+verification as future work. `formal/README_PROVERIF.md` explains how to run
+the ProVerif model yourself.
 
 ## 8. Known deviations from an ideal evaluation
 
-These are also stated in Section XV of the paper.
+Also stated in the manuscript's limitations paragraph.
 
 1. Software-only, single-vCPU host; no embedded-hardware measurements.
-2. The three witnesses run in one process — logical, not organizational,
-   independence.
-3. The FIDEM baseline is a reproduction from the paper specification; the
-   original source repository was not reachable.
-4. The DHCP integration is a byte-accurate reference encoding, not a Kea or
-   Cisco MUD-manager deployment; option codes would require IANA allocation.
+2. Witnesses are three logical processes on one host: logical, not
+   organisational, independence.
+3. The FIDEM baseline is a protocol-level reproduction cross-checked against
+   the authors' released implementation (see `FIDEM_BASELINE_CHECK.md`), not an
+   execution of it; all configurations B1-B5 share one substrate so that
+   measured differences reflect protocol structure.
+4. The consortium ledger implements the cryptographic and data-structure layer
+   only: no consensus, ordering-service latency, propagation, or energy.
+5. DHCP figures are option encodings, not PCAP-derived full messages.

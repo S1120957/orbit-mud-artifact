@@ -1,0 +1,19 @@
+[PASS] E1   Replay old signed MUD file                           exp=rejected
+[PASS] E2   Profile rollback v+1->v (returning controller)       exp=rejected
+[PASS] E3   First-contact old-but-time-valid endorsed checkpoint exp=accepted
+[PASS] E3b  First-contact checkpoint beyond freshness window     exp=rejected
+[PASS] E4   Join with revoked device key                         exp=rejected
+[PASS] E5   Join with suspended device key                       exp=rejected
+[PASS] E6   Replay old onboarding transcript (reused R)          exp=rejected
+[PASS] E7   Replay transcript under a different checkpoint       exp=rejected
+[PASS] E8   Leaked FIDEM class secret K_c                        exp=class-wide-impersonation
+[PASS] E9   Leaked ORBIT-MUD device key k_i                      exp=impersonates-self-until-revoked
+[PASS] E10  Impersonate another device after one k_i leak        exp=rejected
+[PASS] E11  Inconsistent checkpoints to two controllers          exp=detected
+[PASS] E12  Witnesses available in {0,1,2,3} (q=2 strong)        exp=reject<2, accept>=2
+[PASS] E13  Stale cached checkpoint within grace, log down       exp=accepted
+[PASS] E14  Stale checkpoint after grace interval                exp=rejected
+[PASS] E15  Emergency suspension of healthcare gateway           exp=suspended
+[PASS] E16  Duplicate endorsements from one witness id           exp=dup-rejected,distinct-accepted
+
+17/17 experiments matched expected outcome

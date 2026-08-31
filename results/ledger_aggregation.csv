@@ -1,0 +1,8 @@
+batch_B,on_chain_bytes_total,on_chain_bytes_per_checkpoint,blocks
+1,349,349.0,1
+2,348,174.0,1
+5,346,69.2,1
+10,349,34.9,1
+20,349,17.45,1
+50,347,6.94,1
+100,347,3.47,1

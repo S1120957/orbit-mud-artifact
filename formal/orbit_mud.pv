@@ -1,0 +1,139 @@
+(* ===================================================================
+   ORBIT-MUD: symbolic model for ProVerif (applied pi calculus).
+
+   STATUS: NOT EXECUTED in the artifact environment; see
+   formal/RUN_LOG.txt. Run it yourself with:
+       proverif -in pitype formal/orbit_mud.pv
+
+   Modelling notes
+   ---------------
+   * Proof verification is a DESTRUCTOR (reduc), so `zkp_verify` succeeds
+     only on a well-formed response. This matters: if verification is
+     declared as a plain constructor and compared against a constant, the
+     success branch is unreachable and every correspondence query whose
+     premise is "binding succeeded" holds VACUOUSLY.
+   * The device-status leaf binds the device public key, manufacturer,
+     class, credential epoch, and status, and the manufacturer signs the
+     status root. This is the ORBIT-MUD replacement for a class secret.
+   * Global latestness is deliberately NOT modelled and NOT claimed.
+   =================================================================== *)
+
+free ch:channel.
+
+type skey.        (* device private key k_i                       *)
+type pkey.        (* device public key P_i = k_i G                *)
+type mskey.       (* manufacturer signing key                     *)
+type mpkey.       (* manufacturer public key                      *)
+type nonce.       (* randomness: commitments and controller nonce *)
+type hash.
+type status.
+
+(* ---------- status constants ---------- *)
+const active:status.
+const revoked:status.
+const suspended:status.
+
+(* ---------- device keys ---------- *)
+fun pub(skey):pkey.
+
+(* ---------- Schnorr proof of possession ----------
+   commit(r)                      = R = r G
+   zkp_resp(r, k, h)              = z = r + h k
+   zkp_verify(pub(k), R, h, z)    = ok   (destructor: only well-formed) *)
+fun commit(nonce):bitstring.
+fun zkp_resp(nonce, skey, hash):bitstring.
+const ok:bitstring.
+
+reduc forall r:nonce, k:skey, h:hash;
+      zkp_verify(pub(k), commit(r), h, zkp_resp(r, k, h)) = ok.
+
+(* ---------- manufacturer signatures ---------- *)
+fun mpk(mskey):mpkey.
+fun sign(bitstring, mskey):bitstring.
+reduc forall m:bitstring, sk:mskey;
+      checksign(sign(m, sk), mpk(sk)) = m.
+
+(* ---------- authenticated device-status leaf ---------- *)
+fun leaf(pkey, bitstring, bitstring, bitstring, status):bitstring.
+
+(* ---------- transcript hash ----------
+   binds: controller nonce, commitment, device key, URL, manufacturer,
+   class, epoch, status root  *)
+fun H(nonce, bitstring, pkey, bitstring, bitstring, bitstring,
+      bitstring, bitstring):hash.
+
+(* ---------- events ---------- *)
+event deviceRuns(pkey).
+event accepted(pkey).
+event acceptedWithStatus(pkey, status).
+event manufacturerRevoked(pkey).
+
+(* =====================  QUERIES  =====================
+
+   Q1 secrecy: the adversary never learns a device private key.
+   Q2 entitlement + replay: every acceptance of P_i corresponds
+      injectively to a distinct run by the device holding k_i.
+   Q3 revocation: no device is ever accepted carrying revoked status.
+   Q4 sanity (must be REACHABLE, i.e. ProVerif should report
+      "not proved" / attack found): an honest run can be accepted.
+      If Q4 is "true", the model is vacuous and Q2 means nothing.
+   ==================================================== *)
+
+free kA:skey [private].
+query attacker(kA).
+
+query P:pkey; inj-event(accepted(P)) ==> inj-event(deviceRuns(P)).
+
+query P:pkey; event(acceptedWithStatus(P, revoked)) ==> false.
+
+(* vacuity check: we EXPECT ProVerif to find this reachable *)
+query P:pkey; event(accepted(P)) ==> false.
+
+(* ---------- device ---------- *)
+let device(k:skey, url:bitstring, man:bitstring, cls:bitstring,
+           epoch:bitstring) =
+    new r:nonce;
+    let R = commit(r) in
+    event deviceRuns(pub(k));
+    out(ch, (url, R, pub(k)));
+    in(ch, (c:nonce, root:bitstring));
+    let h = H(c, R, pub(k), url, man, cls, epoch, root) in
+    out(ch, zkp_resp(r, k, h)).
+
+(* ---------- controller ---------- *)
+let controller(mpkM:mpkey, url:bitstring, man:bitstring, cls:bitstring,
+               epoch:bitstring) =
+    in(ch, (u:bitstring, R:bitstring, P:pkey));
+    (* signed status root from the manufacturer *)
+    in(ch, sroot:bitstring);
+    let root = checksign(sroot, mpkM) in
+    (* the root must be the leaf for exactly this device, class, epoch
+       and it must carry ACTIVE status *)
+    if root = leaf(P, man, cls, epoch, active) then
+    new c:nonce;
+    out(ch, (c, root));
+    let h = H(c, R, P, u, man, cls, epoch, root) in
+    in(ch, z:bitstring);
+    if zkp_verify(P, R, h, z) = ok then
+    event acceptedWithStatus(P, active);
+    event accepted(P).
+
+(* ---------- manufacturer: enrol, then revoke ---------- *)
+let manufacturer(skM:mskey, P:pkey, man:bitstring, cls:bitstring,
+                 epoch:bitstring) =
+    out(ch, sign(leaf(P, man, cls, epoch, active), skM));
+    (* later the device is revoked: the signed root changes *)
+    event manufacturerRevoked(P);
+    out(ch, sign(leaf(P, man, cls, epoch, revoked), skM)).
+
+(* ---------- main ---------- *)
+process
+    new skM:mskey;
+    let mpkM = mpk(skM) in
+    out(ch, mpkM);
+    new url:bitstring; new man:bitstring; new cls:bitstring;
+    new epoch:bitstring;
+    out(ch, (url, man, cls, epoch));
+    ( !device(kA, url, man, cls, epoch)
+    | !controller(mpkM, url, man, cls, epoch)
+    | !manufacturer(skM, pub(kA), man, cls, epoch) )

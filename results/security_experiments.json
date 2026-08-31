@@ -146,5 +146,59 @@
     "passed": true,
     "detail": "withdrew=True;newjoin=C8:emergency-suspension",
     "baseline_note": "Emergency flag in signed record; withdraw+deny"
+  },
+  {
+    "id": "E16",
+    "name": "Duplicate endorsements from one witness id",
+    "expected": "dup-rejected,distinct-accepted",
+    "actual": "dup-rejected,distinct-accepted",
+    "passed": true,
+    "detail": "dup=C3:witness-quorum:1<2;distinct=accepted",
+    "baseline_note": "Quorum counts distinct configured identities"
+  },
+  {
+    "id": "E17",
+    "name": "Unanchored checkpoint under ledger-strict policy",
+    "expected": "anchored-accepted,unanchored-rejected",
+    "actual": "anchored-accepted,unanchored-rejected",
+    "passed": true,
+    "detail": "anchored=True;unanchored=False",
+    "baseline_note": "On-chain commitment required for admission"
+  },
+  {
+    "id": "E18",
+    "name": "Signed forked checkpoint refused by ordered ledger",
+    "expected": "fork-refused",
+    "actual": "fork-refused",
+    "passed": true,
+    "detail": "submitted=False;verified=False;refusals=[('ACME-MED-0042', 1, 'equivocation')]",
+    "baseline_note": "Ledger total order upgrades equivocation from detectable to rejected at admission"
+  },
+  {
+    "id": "E19",
+    "name": "Duplicated organisation endorsement on-chain",
+    "expected": "dup-rejected",
+    "actual": "dup-rejected",
+    "passed": true,
+    "detail": "under_threshold_block_refused=True;duplicate_endorsement_rejected=True",
+    "baseline_note": "Distinct-identity counting on the ledger path"
+  },
+  {
+    "id": "E20",
+    "name": "Tampered anchor payload or block header",
+    "expected": "rejected",
+    "actual": "rejected",
+    "passed": true,
+    "detail": "payload_tamper=False;header_tamper=False",
+    "baseline_note": "Merkle inclusion + endorsed header binding"
+  },
+  {
+    "id": "E21",
+    "name": "FIDEM device-id binding does not give per-device entitlement",
+    "expected": "class-wide-impersonation-persists",
+    "actual": "class-wide-impersonation-persists",
+    "passed": true,
+    "detail": "spoofed_victim_id_accepted=True; own_id_accepted=True; fig3_variant_accepted=True",
+    "baseline_note": "Holder of class secret Kc answers for ANY claimed device identifier; identifier binding is not authenticated by a per-device key"
   }
 ]

@@ -1,0 +1,4 @@
+metric,median_ms
+returning_onboarding_no_ledger,9.1117
+returning_onboarding_with_ledger,16.2918
+ledger_check_overhead,7.1801

@@ -111,11 +111,14 @@ class Controller:
         # C3 witness endorsements on first contact under strong policy
         first_contact = man not in self.state["checkpoints"]
         if first_contact and self.policy["first_contact"] == "strong":
-            good = 0
+            seen_wids = set()
             for wid, sig in cp.endorsements:
-                wp = self.witness_pubs.get(wid)
+                if wid in seen_wids:
+                    continue              # duplicate identity adds nothing
+                wp = self.witness_pubs.get(wid)  # only configured witnesses
                 if wp and verify_endorsement(wp, wid, cp.signed_body(), sig):
-                    good += 1
+                    seen_wids.add(wid)
+            good = len(seen_wids)
             if good < self.policy["q"]:
                 return fail("C3", f"witness-quorum:{good}<{self.policy['q']}")
         checks["C3"] = True

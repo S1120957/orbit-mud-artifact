@@ -1,0 +1,29 @@
+== off-chain aggregation ==
+B=   1 total=    349B  per-checkpoint=   349.0B
+B=   2 total=    348B  per-checkpoint=   174.0B
+B=   5 total=    346B  per-checkpoint=    69.2B
+B=  10 total=    349B  per-checkpoint=    34.9B
+B=  20 total=    349B  per-checkpoint=   17.45B
+B=  50 total=    347B  per-checkpoint=    6.94B
+B= 100 total=    347B  per-checkpoint=    3.47B
+
+== anchor verification ==
+B=   1 path= 0 nodes  median=7.2506ms
+B=   2 path= 1 nodes  median=7.1455ms
+B=   5 path= 3 nodes  median=7.1715ms
+B=  10 path= 4 nodes  median=7.2772ms
+B=  20 path= 5 nodes  median=7.2857ms
+B=  50 path= 6 nodes  median=7.3661ms
+B= 100 path= 7 nodes  median=7.4448ms
+
+== ledger storage (B=10) ==
+cps=   10 blocks=   1 on-chain=     348B  per-cp=34.8B
+cps=   50 blocks=   5 on-chain=    1736B  per-cp=34.72B
+cps=  100 blocks=  10 on-chain=    3474B  per-cp=34.74B
+cps=  500 blocks=  50 on-chain=   17404B  per-cp=34.81B
+cps= 1000 blocks= 100 on-chain=   34786B  per-cp=34.79B
+
+== onboarding delta ==
+returning_onboarding_no_ledger         9.1117 ms
+returning_onboarding_with_ledger       16.2918 ms
+ledger_check_overhead                  7.1801 ms
