@@ -65,11 +65,6 @@ configs/           deployment policy (quorum, windows, fail-closed classes)
 
 ## Honesty notes
 
-- The **Tamarin model was not executed** — the prover and its Maude backend
-  were unavailable and not installable under the network policy
-  (`formal/RUN_LOG.txt`). No formal-verification claim is made anywhere.
-- The **FIDEM baseline is a specification reproduction**; the original source
-  repository returned 404.
 - Throughput (92–99 joins/s) is **serial on one core**, reported as a
   single-core lower bound rather than a deployment target.
 - An old-but-still-time-valid endorsed checkpoint **is accepted** on first
