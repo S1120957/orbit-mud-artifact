@@ -1,0 +1,27 @@
+{
+  "affinity_before": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "affinity_during": [
+    0
+  ],
+  "bootstrap_resamples": 4000,
+  "cpu_model": "AMD EPYC 9V74 80-Core Processor",
+  "cryptography": "46.0.4",
+  "finished_utc": "2026-11-08T11:56:13Z",
+  "last_completed_section": "security",
+  "openssl_system": "OpenSSL 3.5.5 27 Jan 2026",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "python": "3.13.5 (main, Jul 15 2026, 20:25:40) [GCC 14.2.0]",
+  "runs": 200,
+  "scope": "native P-256 reference on one pinned Linux CPU; no constrained hardware; loopback validators share host and CPU",
+  "seed": 20261108,
+  "started_utc": "2026-11-08T11:55:35.686828+00:00",
+  "timing_clock": "perf_counter_ns",
+  "warmup_per_latency_condition": 10,
+  "execution_note": "All seven commands in execution_manifest.json completed successfully in the final reproduction run; each benchmark family used a fresh process. Start timestamp taken from the JUnit test-suite record."
+}

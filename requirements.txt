@@ -1,0 +1,4 @@
+cryptography==46.0.4
+numpy==2.3.5
+matplotlib==3.10.8
+pytest==9.0.2

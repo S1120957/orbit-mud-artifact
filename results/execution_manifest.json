@@ -1,0 +1,90 @@
+{
+  "all_commands_succeeded": true,
+  "commands": [
+    [
+      "/opt/pyvenv/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "--junitxml=results/tests.xml"
+    ],
+    [
+      "/opt/pyvenv/bin/python",
+      "experiments.py",
+      "--out",
+      "results",
+      "--runs",
+      "200",
+      "--section",
+      "latency"
+    ],
+    [
+      "/opt/pyvenv/bin/python",
+      "experiments.py",
+      "--out",
+      "results",
+      "--runs",
+      "200",
+      "--section",
+      "scaling"
+    ],
+    [
+      "/opt/pyvenv/bin/python",
+      "experiments.py",
+      "--out",
+      "results",
+      "--runs",
+      "200",
+      "--section",
+      "network"
+    ],
+    [
+      "/opt/pyvenv/bin/python",
+      "experiments.py",
+      "--out",
+      "results",
+      "--runs",
+      "200",
+      "--section",
+      "wire"
+    ],
+    [
+      "/opt/pyvenv/bin/python",
+      "experiments.py",
+      "--out",
+      "results",
+      "--runs",
+      "200",
+      "--section",
+      "anchoring"
+    ],
+    [
+      "/opt/pyvenv/bin/python",
+      "experiments.py",
+      "--out",
+      "results",
+      "--runs",
+      "200",
+      "--section",
+      "security"
+    ]
+  ],
+  "quick": false,
+  "runs": 200,
+  "completed_utc": "2026-11-08T11:56:13Z",
+  "source_sha256": {
+    "experiments.py": "5179c58941435a56c7713f6fb2d0e4deb0146f0caf97a36f6ba16e0cb5c11b91",
+    "orbit/__init__.py": "5647e9bb8a62fbdca126cac287330f415d0b70b9f8a2f323640b6fb50d55fd4c",
+    "orbit/baselines.py": "811ed0c3600ca3dc20c60ff61234ba5f60f22eaa29ad74cce3b5c135e683ae30",
+    "orbit/controller.py": "75fb99e367b988054318ec4ba9aee532ec816eeae6f9b105b502f6771ae85e9c",
+    "orbit/crypto.py": "fc960a454bea07a69da5857401f26b555961ab91b61fbd7cb51b410d7039d410",
+    "orbit/ledger.py": "9a640995ce2c44bde6ff2fba2006b36a72db429e16f3e3af5ae22f413cd8bdce",
+    "orbit/merkle.py": "0f0367efc2a1aa1f19ed0f4db0122844205a363df1cb644eeafc434e0a162161",
+    "orbit/model.py": "bf458a7b795ebcec9bc0373868b2eaebf0c0ee4557bda7554405041be26245eb",
+    "orbit/network.py": "dc8918f4faf295a22bda399586301c8f652a7b2dc89fc45089da8cbb6e3969a2",
+    "orbit/storage.py": "96e07147479761a8a6b72c8495806f3c857b1abc066b9900b1c1fa4c61d4c1d0",
+    "orbit/wire.py": "decfdfce24cfe66baea73c4fb6ae0cb9d7c31aeddaaad0d5712dd5df72d72e8b",
+    "run_all.py": "1e97a606028bf6b031a9916e4321cfdbd4b42f0155708ea4a2288405f75d88bc",
+    "tests/test_revision.py": "c4081823c926eb10c60261411a67e648e1217517e2f25f60ba63ac9ea2377e52"
+  }
+}

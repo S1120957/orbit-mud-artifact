@@ -1,0 +1,16 @@
+[
+  {
+    "combinations": 27,
+    "faulty": 1,
+    "n": 3,
+    "no_honest_intersection": 6,
+    "q": 2
+  },
+  {
+    "combinations": 64,
+    "faulty": 1,
+    "n": 4,
+    "no_honest_intersection": 0,
+    "q": 3
+  }
+]

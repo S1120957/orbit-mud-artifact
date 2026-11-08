@@ -1,0 +1,13 @@
+url_bytes,message,custom_options_bytes,dhcp_payload_bytes,ipv4_udp_bytes
+42,Discover,121,383,411
+42,Offer,99,361,389
+42,Request,67,329,357
+128,Discover,207,469,497
+128,Offer,99,361,389
+128,Request,67,329,357
+240,Discover,319,581,609
+240,Offer,99,361,389
+240,Request,67,329,357
+255,Discover,334,596,624
+255,Offer,99,361,389
+255,Request,67,329,357

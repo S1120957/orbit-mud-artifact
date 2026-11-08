@@ -1,0 +1,8 @@
+{
+  "delay_model": "server sleep once per RPC; not WAN RTT",
+  "one_failure_ms": 32.214785,
+  "one_terminated_process_committed": true,
+  "transport": "loopback TCP",
+  "two_terminated_processes_fail_closed": true,
+  "view_change": false
+}
